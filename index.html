@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<style>
+    html,body{
+      padding:0px;
+      margin:0px;
+      height:100%;
+  }
+  #music{
+      display: flex;
+      height:100%;
+  }
+  /* 左边 */
+  .left{
+      flex:1;
+      background-color: #eee;
+      height:100%;
+      box-sizing: border-box;
+      overflow-y: scroll;
+  }
+  .left input{
+      width:500px;
+      height:30px;
+      border-radius: 20px;
+      display: block;
+      margin:20px auto;
+      outline: none;
+      padding-left:10px;
+  }
+  .left ul li{
+      list-style: none;
+  }
+  .left .list{
+    padding:5px 5px 5px 100px;
+    font-size: 15px;
+  }
+  
+    /* 右边 */
+  .right{
+    flex:1;
+    background-color:#fff;
+    padding-top:30px;
+    box-sizing: border-box;
+    overflow-y: scroll;
+  }
+  .right .pic{
+      width:200px;
+      height:200px;
+      border-radius: 50%;
+      display: block;
+      margin:0px auto;
+  }
+  .right audio{
+      display: block;
+      margin:50px auto;
+  }
+  ul li{
+      list-style: none;
+  }
+  /* 评论用户头像 */
+  .icon{
+      width:50px;
+      height:50px;
+      display: inline-block;
+  }
+  .comments{
+      position: relative;
+      margin-bottom:10px;
+      border-bottom:1px dashed #ccc;
+      box-sizing: border-box;
+      padding:5px;
+      
+  }
+  .comments .con{
+   font-size:12px;
+   position: absolute;
+   top:0px;
+   left:55px;
+   padding:5px 5px 5px 10px;
+  }
+  .comments .title{
+      color:#0074c2;
+  }
+  .jincai{
+      padding:5px 0px;
+      font-size:12px;
+      font-weight: 700px;
+      padding-right:45px;
+      border:1px solid #ccc;
+  }
+  /* 音乐列表的动画样式 */
+  .mus-item {
+  display: inline-block;
+  margin-right: 10px;
+  }
+ .mus-enter-active, .mus-leave-active {
+  transition: all 1s;
+  }
+ .mus-enter, .mus-leave-to
+/* .list-leave-active for below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateX(100px);
+ }
+ /* 写一个一直旋转的动画 */
+ @keyframes autoRotate{
+     from{}
+     to{
+         transform: rotateZ(360deg)
+     }
+ }
+ /* 为类添加动画 */
+ .rotate{
+     animation:autoRotate 30s infinite linear;
+ }
+ /* 暂停 */
+ .pause{
+     animation-play-state: paused;
+ }
+
+ [v-cloak] {
+  display: none;
+}
+</style>
+
+<body>
+    <div id="music" v-cloak>
+        <div class="left">
+            <input type="text" placeholder="请输入您喜欢的歌曲" v-model="music" @keyup.enter="searchMusic">
+            <!-- 动画列表 -->
+            <!-- <transition-group name="mus" tag="ul">
+                <li :style="{'transition-delay':index*100+'ms'}" v-for="(item, index) in musicList" :key="item.id"
+                    @dblclick="playMusic(item.id)" v-cloak>
+                    {{item.artists[0].name}}--{{item.album.name}}
+                </li>
+            </transition-group> -->
+            <!-- 非动画列表 -->
+            <ul>
+                <li v-for="(item, index) in musicList" :key="index" class="list"
+                    @dblclick="playMusic(item.id)" v-cloak>
+                    {{item.artists[0].name}}--{{item.album.name}}
+                </li>
+            </ul>
+        </div>
+        <div class="right">
+            <!-- 音乐专辑封面 把图片地址自定义属性在src中 三元表达式-->
+            <img :src="picUrl==''?'./lib/img/music.jpg':picUrl" alt="" class="pic">
+
+            <!-- 控制条 把音乐的URL地址添加到属性中-->
+            <audio controls :src="musicUrl" autoplay></audio>
+            <!-- 歌曲评论 -->
+            <ul>
+                <!-- <li class="jincai">精彩评论</li> -->
+                <li v-for="(item, index) in comments" :key="index" class="comments">
+                    <img :src="item.user.avatarUrl" alt="" class="icon">
+                    <div class="con">
+                        <span class="title">{{item.user.nickname}}</span>  :  <span class="content">{{item.content}}</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+
+</html>
+<script src="./lib/vue.js"></script>
+<!-- 使用aoixs来请求数据  引入-->
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    var app = new Vue({
+        el: "#music",
+        data: {
+            music: '',
+            // 用一个数组来储存
+            musicList: [],
+            // 音乐的url路径
+            musicUrl: '',
+            // 图片的pic路径
+            picUrl: '',
+            comments: []
+
+        },
+        methods: {
+            // 查找
+            searchMusic() {
+                // 
+                this.musicList = [];
+                //    ajax请求接口数据
+                axios.get("https://autumnfish.cn/search?keywords=" + this.music).then(response => {
+                    // console.log(response);
+                    this.musicList = response.data.result.songs;
+                })
+            },
+            // 播放歌曲 传一个ID来获取歌曲的信息
+            playMusic(id) {
+                axios.get("https://autumnfish.cn/music/url?id=" + id).then(response => {
+                    // console.log(response);获取URL的值
+                    this.musicUrl = response.data.data[0].url;
+                });
+                // 调用接口 获取图片地址
+                axios.get("https://autumnfish.cn/song/detail?ids=" + id).then(response => {
+                    //    console.log(response);
+                    this.picUrl = response.data.songs[0].al.picUrl;
+                    //    console.log(this.picUrl);
+                });
+                // 调用接口 获取评论
+                axios.get("https://autumnfish.cn/comment/music?limit=1&id=" + id).then(response => {
+                    // console.log(response);
+                    this.comments = response.data.hotComments;
+                })
+
+            },
+
+        }
+    })
+    // 给播放器设置 点击播放按钮的时候旋转
+    document.querySelector('audio').onplay = function () {
+        console.log("播放了");
+        //暂时移除类名
+        document.querySelector('.pic').classList.remove('pause');
+        //添加一个旋转的动画
+        document.querySelector('.pic').classList.add('rotate');
+    }
+    document.querySelector('audio').onpause = function () {
+        console.log("暂停了");
+        // 直接写会出现闪退的情况
+        // document.querySelector('.pic').classList.remove('rotate')
+        document.querySelector('.pic').classList.add('pause');
+    }
+</script>
